@@ -376,3 +376,318 @@ int32 VisibleAnywhereInt = 12;
         - 그 후, 각 C++ 클래스에 대응하는 BP를 만들어서 **직접 수정 없이** 다양하게 확장 가능
           
 - SpringArm : 시야가 가려지면 카메라 조정됨.
+
+### 124강. Pawn에 빙의하기(Possess)
+
+- 혼자 게임할 땐 0이 국룰
+  
+![Image](https://github.com/user-attachments/assets/5119c85c-2a27-4fe8-88bd-ec92dbe71bd7)
+
+### 125강. 인풋 처리하기
+
+- wasd를 누르면 move함수에 적용된다
+    - w:1,0 , s:-1,0 등
+- 매개 변수 안에서 전방 선언:
+    - `virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;`
+- BasePawn에서는 Input처리가 필요 없음.
+    
+    → Tanck에 virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override; 설정
+    
+- 축 바인딩을 할 때 도움됨.
+    - `PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &ATank::Move);`
+    - `TEXT("MoveForward")` : Axis Mapping한 이름
+    - `this` : 바인딩할 객체
+    - `&ATank::Move` : 할당할 함수 주소
+ 
+  - Local Space vs World Space
+  - 기즈모의 차이를 보면 됨
+    
+    ![Image](https://github.com/user-attachments/assets/1e4c3cf7-1789-40e2-a843-5d0c363096a4)
+    
+    ![Image](https://github.com/user-attachments/assets/fceb4610-5a44-4806-acbe-d72c771c548d)
+    
+- 둘이 같거나 다를 수 있음
+- 이상태에서 x방향으로 움직인다면, world에서는 월드 기준 전방, 로컬에서는 탱크의 전방으로 이동
+- `AActor::AddActorLocalOffset`
+    
+    ```c++
+	void AddActorLocalOffset  
+    (  
+        FVector DeltaLocation,  
+        bool bSweep,  
+        FHitResult * OutSweepHitResult,  
+        ETeleportType Teleport  
+    ) 
+    ```
+    
+- BasePawn.cpp에서 추가
+    
+    ```c++
+    FVector DeltaLocation(0.f,0.f,0.f);
+    	DeltaLocation.X = 2.f;
+    	AddActorLocalOffset(DeltaLocation);
+    }
+    ```
+    
+    - 이러면 tower랑 turret이 모두 자기의 X 방향으로 움직임
+    
+    → 둘다 BasePawn을 상속받으니까
+    
+- Simulate 실행하기(Alt + s) 멀리서 보기 가능
+- Tank.cpp
+```c++
+ void ATank::Move(float Value)
+{
+    UE_LOG(LogTemp, Display, TEXT("%f"),Value);
+    FVector DeltaLocation = FVector::ZeroVector;
+	DeltaLocation.X = Value;
+	AddActorLocalOffset(DeltaLocation);
+}
+```
+### 127강. Movement Speed
+
+- 프레임의 속도에 따라 달라짐 → DeltaTime
+- 처음 시작하면 fps이 낮아짐
+    - 모든 BeginPlay과 월드를 호출하기에
+- DeltaTime
+    - Tick은 일정하게 호출되지 않음
+        
+        → 프레임마다 계산하기 때문
+        
+        → 속도 저하됨
+        
+    - CPU 사용량에 따라 달라짐
+- 균일하게 수행됨.
+- 일반 함수에서 DeltaTime 구하기
+- `UGameplayStatics::GetWorldDeltaSeconds(World Context Objcet)`
+    - 게임 개발에 도움되는 통계 기능
+    - return DeltaTime
+    - 우리가 어떤 월드에 있는지를 말해줘야됨.
+        
+        → this 주로 사용.
+        
+
+```jsx
+ FVector DeltaLocation = FVector::ZeroVector;
+ DeltaLocation.X = Value * UGameplayStatics::GetWorldDeltaSeconds(this) * Speed;
+ AddActorLocalOffset(DeltaLocation);
+```
+
+### 128강. 로컬 회전
+
+- Sweeping : 특정한 한 프레임에서 움직일 때 두 오브젝트가 겹치는지를 확인
+    
+    → 겹치면 겹치기 전 프레임으로 움직여 겹치는것을 방지
+    
+    - `AddActorLocalOffset(DeltaLocation,true);`
+    - 콜리전 기능 있어야됨.
+        
+        → BP_TankPawn Collision Presets 활성화
+        
+    - BlockAllDynamic 은 모든 오브젝트를 못지나감
+- Pitch / Yaw / Roll
+    - 좌우 회전: Yaw
+    - 위아래 고개 숙이기 : Pitch
+    - 몸을 기울이기 : Roll
+- `AddActorLocalRotation`
+
+```jsx
+void ATank::Turn(float Value)
+{
+    FRotator DeltaRotator = FRotator::ZeroRotator;
+    DeltaRotator.Yaw = Value * TurnRate * UGameplayStatics::GetWorldDeltaSeconds(this);
+    AddActorLocalRotation(DeltaRotator);
+}
+```
+
+### 129강. 캐스팅
+
+- Pawn에는 보이지 않는 Controller가 있음
+
+AController → AAiController → APlayerController
+
+- PlayerControllerRef = GetController();
+    
+    → 컴파일 오류! 타입 안맞음
+    
+    → Cast를 한다
+    
+    - Cast<Type>(Pointer)
+    
+    `PlayerControllerRef = Cast<APlayerController>(GetController());`
+    
+- 이제 APlayerController에 있는 GetHitResultUnderCursor 사용가능
+
+### 130강. 마우스 커서 적용
+
+- 마우스 커서를 따라서 디버그 구체 적용
+- 시작부터 끝점까지 선을 그어 중간에 물체가 있다면 Hit 판정
+    
+    → Line Trace, Trace Hit
+    
+
+## **FHitResult**
+
+- **FHitResult** : 충돌(히트) 정보를 저장하는 **구조체**.
+- 주로 **트레이스(선, 구, 박스 등)** 또는 **충돌** 관련 함수에서 사용.
+- 내부에 담기는 데이터 예:
+    - `ImpactPoint` : 충돌한 지점의 위치.
+    - `Normal` : 충돌면의 노멀(방향 벡터).
+    - `Distance` : 충돌까지의 거리.
+    - `Actor` : 충돌한 액터.
+    - `Component` : 충돌한 컴포넌트.
+    - `bBlockingHit` : 실제로 막히는 히트가 발생했는지.
+
+### PlayerControllerRef→GetHitResultUnderCursor(...)
+
+```cpp
+PlayerControllerRef->GetHitResultUnderCursor(
+ECollisionChannel::ECC_Visibility,
+false,
+HitResult);
+```
+
+- **현재 플레이어의 마우스 커서 아래에 있는 물체와의 충돌(히트) 정보**를 얻는다.
+
+### 매개변수:
+
+- **ECollisionChannel::ECC_Visibility**
+    
+    → 어떤 충돌 채널로 검사할지 지정.
+    
+    → 기본적으로 **카메라에서 볼 수 있는 물체**만 검사.
+    → 만약 무기용 충돌, AI용 충돌 등 검사하려면 다른 채널을 써야 함.
+    
+- **bool bTraceComplex**
+
+→**복잡한 충돌(Collision Complex)**
+
+검사 여부.
+
+→true: 복잡한 콜리전(메시 폴리곤 그대로 검사).
+
+→false: 간단한 콜리전(프리미티브, 예: 캡슐, 박스, 구
+
+- **&HitResult**
+
+→**out parameter**
+
+→ 커서 아래에서 충돌된 정보를 이 구조체에 저장.
+
+### DrawDebugSphere(...)
+
+```cpp
+DrawDebugSphere(
+            GetWorld(),
+            HitResult.ImpactPoint,
+            25.f,
+            12,
+            FColor::Blue,
+            false,
+            -1.f);
+```
+
+### 함수 역할:
+
+- **디버깅용으로 월드에 구(스피어)를 그림**.
+- 주로 **충돌 위치나 검사 결과를 시각적으로 확인**할 때 사용.
+
+### 매개변수:
+
+- **GetWorld()**
+    
+    → 현재 오브젝트(액터, 컴포넌트 등)가 속한 월드.
+    
+- **HitResult.ImpactPoint**
+    
+    → 구를 그릴 위치.
+    
+    → 충돌 지점.
+    
+- **25.f**
+    
+    → 구의 반지름.
+    
+- **12**
+    
+    → 구의 세그먼트 개수. 많을수록 부드러움.
+    
+- **FColor::Blue**
+    
+    → 구의 색상.
+    
+- **false**
+    
+    → **영구적인가?** → `false`면 일정 시간 후 사라짐.
+    
+- **-1.f**
+    
+    → 유지 시간. `-1.f`이면 다음 씬 업데이트까지 유지됨.
+    
+
+![image.png](attachment:ce39778b-0582-46cc-b924-5e99e00fdbbe:image.png)
+
+- 실행 중 물결표 누르면 cmd 활성화
+- Show Collision 하면 심플 콜리전이 뜸
+
+→ 라인 트레이스할 때 더 결과가 좋음
+
+![image.png](attachment:bb9ca7c4-cb90-4330-87bc-b7d74913b2ff:image.png)
+
+- 이거는 Mesh에서 직접 확인한 Complex 콜리젼 → 계산 더 많음
+
+### 131강. Rotating The Turret
+
+- 시작과 끝사이의 벡터 구하기
+    - ToTarget = end - start;
+- 이렇게 회전을 하면 탱크 앞쪽이 바닥을 본다.
+    
+    → Yaw값만 바꾸고 싶음.
+    
+- BasePawn.cpp
+
+```cpp
+void ABasePawn::RotateTurret(FVector LookAtTarget)
+{
+	FVector ToTarget = LookAtTarget - TurretMesh->GetComponentLocation();
+	FRotator LooAtRotation = FRotator(0.f,ToTarget.Rotation().Yaw,0.f);
+	TurretMesh->SetWorldRotation(LooAtRotation);
+}
+```
+
+- Tank.cpp
+
+```cpp
+ RotateTurret(HitResult.ImpactPoint);
+```
+
+- 문제점: 마우스가 임팩트 지점을 못찾으면(먼 곳) 엉뚱한 곳으로 감
+- Blocking Volume이 있음
+
+![image.png](attachment:4b198b7a-fe8d-49ef-af05-c7f8ca9ca93e:image.png)
+
+- 보이지 않지만 Hit판정이 될 수 있게 함.
+- Collision Presets을 아래처럼 설정
+    
+    ![image.png](attachment:7f31be20-34a9-4fcc-bfc8-c3e9f944bfbf:image.png)
+    
+- HitResult에서 채널을 ECC_Visibility로 했기 때문
+
+BUT 탱크 중간에 마우스를 하면 이상해짐.
+
+→ 보간 적용
+
+```cpp
+FVector ToTarget = LookAtTarget - TurretMesh->GetComponentLocation();
+	FRotator LooAtRotation = FRotator(0.f,ToTarget.Rotation().Yaw,0.f);
+	TurretMesh->SetWorldRotation(
+		FMath::RInterpTo(TurretMesh->GetComponentRotation(),
+		LooAtRotation,
+		UGameplayStatics::GetWorldDeltaSeconds(this),
+		5.f)
+	)
+```
+
+![image.png](attachment:c1295e6f-5ff4-40b4-9267-6f63a0a277d0:image.png)
+
+- `FMath::RInterpTo(시작 벡터, 목표 벡터, DeltaTime, 회전 속도)`
