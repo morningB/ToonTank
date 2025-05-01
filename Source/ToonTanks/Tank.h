@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "BasePawn.h"
 #include "Tank.generated.h"
-
 /**
  * 
  */
@@ -16,9 +15,18 @@ class TOONTANKS_API ATank : public ABasePawn
 
 public:
 	ATank();
-// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void Tick(float DeltaTime) override;
+protected:
+	virtual void BeginPlay() override;
+// Called every frame
+
 private:
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float Speed = 200.f;
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float TurnRate = 200.f;
+
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class USpringArmComponent* SpringArm;
 
@@ -26,5 +34,8 @@ private:
 	class UCameraComponent* Camera;
 
 	void Move(float Value);
+	void Turn(float Value);
+
+	APlayerController* PlayerControllerRef;
 	
 };
