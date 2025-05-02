@@ -679,13 +679,13 @@ BUT 탱크 중간에 마우스를 하면 이상해짐.
 
 ```cpp
 FVector ToTarget = LookAtTarget - TurretMesh->GetComponentLocation();
-	FRotator LooAtRotation = FRotator(0.f,ToTarget.Rotation().Yaw,0.f);
-	TurretMesh->SetWorldRotation(
+FRotator LooAtRotation = FRotator(0.f,ToTarget.Rotation().Yaw,0.f);
+TurretMesh->SetWorldRotation(
 		FMath::RInterpTo(TurretMesh->GetComponentRotation(),
 		LooAtRotation,
 		UGameplayStatics::GetWorldDeltaSeconds(this),
 		5.f)
-	)
+	);
 ```
 
 ![image.png](attachment:c1295e6f-5ff4-40b4-9267-6f63a0a277d0:image.png)
