@@ -625,14 +625,14 @@ DrawDebugSphere(
     → 유지 시간. `-1.f`이면 다음 씬 업데이트까지 유지됨.
     
 
-![image.png](attachment:ce39778b-0582-46cc-b924-5e99e00fdbbe:image.png)
+![Image](https://github.com/user-attachments/assets/e1434030-184d-47ff-8bf3-d509504f2e13)
 
 - 실행 중 물결표 누르면 cmd 활성화
 - Show Collision 하면 심플 콜리전이 뜸
 
 → 라인 트레이스할 때 더 결과가 좋음
 
-![image.png](attachment:bb9ca7c4-cb90-4330-87bc-b7d74913b2ff:image.png)
+![Image](https://github.com/user-attachments/assets/d887686b-3085-4a3f-9d42-5161722148fc)
 
 - 이거는 Mesh에서 직접 확인한 Complex 콜리젼 → 계산 더 많음
 
@@ -664,12 +664,12 @@ void ABasePawn::RotateTurret(FVector LookAtTarget)
 - 문제점: 마우스가 임팩트 지점을 못찾으면(먼 곳) 엉뚱한 곳으로 감
 - Blocking Volume이 있음
 
-![image.png](attachment:4b198b7a-fe8d-49ef-af05-c7f8ca9ca93e:image.png)
+	![Image](https://github.com/user-attachments/assets/569bead2-0f8e-4454-a439-230b19138393)
 
 - 보이지 않지만 Hit판정이 될 수 있게 함.
 - Collision Presets을 아래처럼 설정
     
-    ![image.png](attachment:7f31be20-34a9-4fcc-bfc8-c3e9f944bfbf:image.png)
+	![Image](https://github.com/user-attachments/assets/3eff2e90-c1b6-4050-b458-04366aacb969)
     
 - HitResult에서 채널을 ECC_Visibility로 했기 때문
 
@@ -688,6 +688,6 @@ TurretMesh->SetWorldRotation(
 	);
 ```
 
-![image.png](attachment:c1295e6f-5ff4-40b4-9267-6f63a0a277d0:image.png)
+![Image](https://github.com/user-attachments/assets/0acc7ec4-d569-4d46-b29c-65b3d53fb000)
 
 - `FMath::RInterpTo(시작 벡터, 목표 벡터, DeltaTime, 회전 속도)`
