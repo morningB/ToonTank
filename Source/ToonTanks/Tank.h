@@ -26,6 +26,7 @@ private:
 	float Speed = 200.f;
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float TurnRate = 200.f;
+	
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class USpringArmComponent* SpringArm;
@@ -35,7 +36,7 @@ private:
 
 	void Move(float Value);
 	void Turn(float Value);
-
+	
 	APlayerController* PlayerControllerRef;
 	
 };
